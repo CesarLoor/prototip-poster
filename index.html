@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Simulador interactivo de FOP (Fibrodisplasia Osificante Progresiva) mediante Ecuaciones Diferenciales Ordinarias. Visualización dinámica de la progresión de la enfermedad."
+    />
+    <title>FOP Simulator — Modelación con EDOs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ─── PARTICLES BACKGROUND ─── -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- ─── HEADER ─── -->
+    <header class="site-header">
+      <div class="header-badge">PÓSTER CIENTÍFICO · EDO 2026</div>
+      <h1 class="site-title">
+        <span class="title-accent">FOP</span> Simulator
+      </h1>
+      <p class="site-subtitle">
+        Modelación con Ecuaciones Diferenciales Ordinarias de la<br />
+        <em>Fibrodisplasia Osificante Progresiva</em> — La enfermedad que
+        convierte el cuerpo en hueso
+      </p>
+      <div class="equation-strip">
+        <span class="eq">dN/dt = r·N(1−N/K) − δ·B·N</span>
+        <span class="eq-divider">|</span>
+        <span class="eq">dB/dt = α·N·f(S) − μ·B</span>
+        <span class="eq-divider">|</span>
+        <span class="eq">dS/dt = σ − γ·S − β·S·N</span>
+      </div>
+    </header>
+
+    <!-- ─── MAIN GRID ─── -->
+    <main class="main-grid">
+      <!-- LEFT: ARM VISUALIZER -->
+      <section class="panel arm-panel" id="armSection">
+        <div class="panel-header">
+          <span class="panel-icon">🦴</span>
+          <h2>Visualizador del Brazo</h2>
+          <span class="panel-tag">Canvas 2D</span>
+        </div>
+        <div class="arm-container">
+          <canvas id="armCanvas" width="380" height="420"></canvas>
+          <div class="arm-legend">
+            <div class="legend-item">
+              <span class="dot soft"></span>Tejido Blando
+            </div>
+            <div class="legend-item">
+              <span class="dot ossified"></span>Tejido Osificado
+            </div>
+            <div class="legend-item">
+              <span class="dot bone"></span>Hueso Nativo
+            </div>
+          </div>
+        </div>
+        <div class="ossification-bar-wrap">
+          <label>Nivel de Osificación Heterotópica</label>
+          <div class="ossification-bar">
+            <div class="ossification-fill" id="ossBar"></div>
+            <span class="oss-pct" id="ossPct">0%</span>
+          </div>
+        </div>
+        <div class="arm-controls">
+          <button id="btnFlare" class="btn btn-danger">⚡ Simular Brote</button>
+          <button id="btnReset" class="btn btn-ghost">↺ Reiniciar</button>
+        </div>
+      </section>
+
+      <!-- CENTER: CHART -->
+      <section class="panel chart-panel" id="chartSection">
+        <div class="panel-header">
+          <span class="panel-icon">📈</span>
+          <h2>Dinámica del Sistema EDO</h2>
+          <span class="panel-tag">Runge-Kutta 4</span>
+        </div>
+        <canvas id="chartCanvas" width="560" height="340"></canvas>
+        <div class="chart-legend-row">
+          <div class="cl-item" style="--c: #38bdf8">
+            N(t) — Células Mesenquimales
+          </div>
+          <div class="cl-item" style="--c: #f472b6">
+            B(t) — Tejido Osificado
+          </div>
+          <div class="cl-item" style="--c: #34d399">
+            S(t) — Señal Inflamatoria
+          </div>
+        </div>
+        <div class="time-scrubber">
+          <label>Tiempo de simulación: <span id="tLabel">0</span> días</label>
+          <input
+            type="range"
+            id="timeSlider"
+            min="0"
+            max="365"
+            value="0"
+            step="1"
+          />
+        </div>
+      </section>
+
+      <!-- RIGHT: CONTROLS -->
+      <section class="panel controls-panel" id="controlsSection">
+        <div class="panel-header">
+          <span class="panel-icon">⚙️</span>
+          <h2>Parámetros del Modelo</h2>
+          <span class="panel-tag">Interactivo</span>
+        </div>
+        <div class="params-grid">
+          <div class="param-group">
+            <h3>Células Mesenquimales</h3>
+            <div class="param-row">
+              <label
+                >r — Tasa de proliferación
+                <span class="param-val" id="rVal">0.30</span></label
+              >
+              <input
+                type="range"
+                id="r"
+                min="0.01"
+                max="1.0"
+                step="0.01"
+                value="0.30"
+              />
+            </div>
+            <div class="param-row">
+              <label
+                >K — Capacidad de carga
+                <span class="param-val" id="KVal">1.00</span></label
+              >
+              <input
+                type="range"
+                id="K"
+                min="0.5"
+                max="3.0"
+                step="0.1"
+                value="1.00"
+              />
+            </div>
+            <div class="param-row">
+              <label
+                >δ — Tasa de diferenciación
+                <span class="param-val" id="dVal">0.50</span></label
+              >
+              <input
+                type="range"
+                id="delta"
+                min="0.01"
+                max="2.0"
+                step="0.01"
+                value="0.50"
+              />
+            </div>
+          </div>
+
+          <div class="param-group">
+            <h3>Formación Ósea</h3>
+            <div class="param-row">
+              <label
+                >α — Tasa de osificación
+                <span class="param-val" id="aVal">0.40</span></label
+              >
+              <input
+                type="range"
+                id="alpha"
+                min="0.01"
+                max="2.0"
+                step="0.01"
+                value="0.40"
+              />
+            </div>
+            <div class="param-row">
+              <label
+                >μ — Degradación ósea
+                <span class="param-val" id="mVal">0.05</span></label
+              >
+              <input
+                type="range"
+                id="mu"
+                min="0.001"
+                max="0.5"
+                step="0.001"
+                value="0.050"
+              />
+            </div>
+          </div>
+
+          <div class="param-group">
+            <h3>Señal Inflamatoria (BMP)</h3>
+            <div class="param-row">
+              <label
+                >σ — Producción basal
+                <span class="param-val" id="sVal">0.20</span></label
+              >
+              <input
+                type="range"
+                id="sigma"
+                min="0.01"
+                max="1.0"
+                step="0.01"
+                value="0.20"
+              />
+            </div>
+            <div class="param-row">
+              <label
+                >γ — Degradación señal
+                <span class="param-val" id="gVal">0.30</span></label
+              >
+              <input
+                type="range"
+                id="gamma"
+                min="0.01"
+                max="1.0"
+                step="0.01"
+                value="0.30"
+              />
+            </div>
+            <div class="param-row">
+              <label
+                >β — Consumo por células
+                <span class="param-val" id="bVal">0.20</span></label
+              >
+              <input
+                type="range"
+                id="beta"
+                min="0.01"
+                max="1.0"
+                step="0.01"
+                value="0.20"
+              />
+            </div>
+          </div>
+
+          <div class="param-group">
+            <h3>Condiciones Iniciales</h3>
+            <div class="param-row">
+              <label
+                >N₀ — Células iniciales
+                <span class="param-val" id="N0Val">0.50</span></label
+              >
+              <input
+                type="range"
+                id="N0"
+                min="0.01"
+                max="1.0"
+                step="0.01"
+                value="0.50"
+              />
+            </div>
+            <div class="param-row">
+              <label
+                >B₀ — Hueso inicial
+                <span class="param-val" id="B0Val">0.01</span></label
+              >
+              <input
+                type="range"
+                id="B0"
+                min="0.001"
+                max="0.5"
+                step="0.001"
+                value="0.010"
+              />
+            </div>
+            <div class="param-row">
+              <label
+                >S₀ — Señal inicial
+                <span class="param-val" id="S0Val">0.10</span></label
+              >
+              <input
+                type="range"
+                id="S0"
+                min="0.01"
+                max="1.0"
+                step="0.01"
+                value="0.10"
+              />
+            </div>
+          </div>
+        </div>
+        <!-- /params-grid -->
+
+        <div class="action-row">
+          <button id="btnRun" class="btn btn-primary">
+            ▶ Ejecutar Simulación
+          </button>
+          <button id="btnPreset1" class="btn btn-accent">
+            🧬 Mutación ACVR1
+          </button>
+          <button id="btnPreset2" class="btn btn-accent">
+            💊 Escenario Tratado
+          </button>
+        </div>
+
+        <div class="info-box" id="infoBox">
+          <p>
+            Ajusta los parámetros y presiona <strong>▶ Ejecutar</strong> para
+            iniciar la simulación numérica del modelo EDO de 3 variables de
+            estado.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <!-- ─── TECH STACK FOOTER ─── -->
+    <footer class="tech-footer">
+      <div class="tech-label">Stack Tecnológico</div>
+      <div class="tech-pills">
+        <span class="pill pill-html">HTML5 Canvas</span>
+        <span class="pill pill-js">Vanilla JS</span>
+        <span class="pill pill-math">Runge-Kutta 4</span>
+        <span class="pill pill-css">CSS3 Variables</span>
+        <span class="pill pill-ode">Sistema EDO 3×3</span>
+        <span class="pill pill-anim">requestAnimationFrame</span>
+      </div>
+      <div class="model-desc">
+        Modelo biológico: N(t)=Células Mesenquimales · B(t)=Tejido Osificado ·
+        S(t)=Señal BMP
+      </div>
+    </footer>
+
+    <script src="ode.js"></script>
+    <script src="arm.js"></script>
+    <script src="chart.js"></script>
+    <script src="particles.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>

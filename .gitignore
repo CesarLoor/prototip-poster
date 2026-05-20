@@ -1,0 +1,11 @@
+# Node (si eventualmente usas npm)
+node_modules/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

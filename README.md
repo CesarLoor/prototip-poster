@@ -4,7 +4,7 @@
 Modelación matemática mediante Ecuaciones Diferenciales Ordinarias (EDO) con método Runge-Kutta 4.
 
 ## 🌐 Demo en vivo
-> [Ver simulador desplegado →](https://cesarloor.github.io/fop-simulator/)
+> [Ver simulador desplegado →](https://cesarloor.github.io/prototip-poster/)
 
 ## 🧬 Descripción del Modelo
 
